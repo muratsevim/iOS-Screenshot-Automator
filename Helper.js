@@ -14,11 +14,17 @@ function captureLocalizedScreenshot(name)
 		model = "ipad";
   	}
 
-	var orientation = "portrait";
-	if (rect.size.height < rect.size.width) orientation = "landscape";
+	var orientationName = "portrait";
+	if (rect.size.height < rect.size.width) orientationName = "landscape";
 	
 	var language = target.frontMostApp().preferencesValueForKey("AppleLanguages")[0];
 	
-	var parts = [language, model, name]; // orientation
-	target.captureScreenWithName(parts.join("-"));
+	var parts = [name, language, model, orientationName];
+	
+	var imageName = parts.join("-");
+	//using application frame to generate screenshots without the status bar.
+	var application = target.frontMostApp();
+	var applicationFrame = application.rect();
+	target.captureRectWithName(applicationFrame, imageName);
+	//target.captureScreenWithName(imageName);
 }
