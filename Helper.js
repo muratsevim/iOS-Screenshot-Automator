@@ -1,4 +1,4 @@
-function captureLocalizedScreenshot(name) 
+function captureLocalizedScreenshot(prefix, name) 
 {
 	var target = UIATarget.localTarget();
 	var model = target.model();
@@ -19,9 +19,9 @@ function captureLocalizedScreenshot(name)
 	
 	var language = target.frontMostApp().preferencesValueForKey("AppleLanguages")[0];
 	
-	var parts = [name, language, model, orientationName];
+	var parts = [language, model, name];
 	
-	var imageName = parts.join("-");
+	var imageName = prefix + parts.join("-");
 	//using application frame to generate screenshots without the status bar.
 	var application = target.frontMostApp();
 	var applicationFrame = application.rect();

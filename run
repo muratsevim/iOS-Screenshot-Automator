@@ -5,7 +5,7 @@ on run argv
 	-- (has to match the name of the menu items of the iOS Simulator)
 	set allDevices to {"iPad (Retina)", "iPhone (Retina 3.5-inch)" , "iPhone (Retina 4-inch)"}
 	-- Set all languages your app is translated to. 
-	set allLanguages to {"en", "tr" }
+	set allLanguages to {"zh-Hans", "en", "fr", "de", "it", "ja", "ru", "es", "tr", "uk" }
 	
 	set iOSVersion to "6.1"
 	
