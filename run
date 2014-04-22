@@ -2,8 +2,16 @@
 
 on run argv
 	-- Set all devices you want to use for screenshots here 
-	-- (has to match the name of the menu items of the iOS Simulator)
-	set allDevices to {"iPhone Retina (3.5-inch)" , "iPhone Retina (4-inch)", "iPad Retina"}
+	-- (has to match one of the names returned by 'instruments -w x' command)
+	-- Possible options for iOS 7.1
+      -- iPhone - Simulator - iOS 7.1
+      -- iPhone Retina (3.5-inch) - Simulator - iOS 7.1
+      -- iPhone Retina (4-inch) - Simulator - iOS 7.1
+      -- iPhone Retina (4-inch 64-bit) - Simulator - iOS 7.1
+      -- iPad - Simulator - iOS 7.1
+      -- iPad Retina - Simulator - iOS 7.1
+      -- iPad Retina (64-bit) - Simulator - iOS 7.1
+	set allDevices to {"iPhone Retina (4-inch) - Simulator - iOS 7.1", "iPhone Retina (3.5-inch) - Simulator - iOS 7.1" , "iPad Retina - Simulator - iOS 7.1"}
 	-- Set all languages your app is translated to. 
 	set allLanguages to {"zh-Hans", "en", "fr", "de", "it", "ja", "ru", "es", "tr", "uk" }
 
@@ -21,7 +29,7 @@ on run argv
 	set scriptName to item 1 of argv
 	set appName to item 2 of argv
 	
-	set automationTemplate to "instruments -t /Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/PlugIns/AutomationInstrument.bundle/Contents/Resources/Automation.tracetemplate"
+	set automationTemplatePath to "/Applications/Xcode.app/Contents/Applications/Instruments.app/Contents/PlugIns/AutomationInstrument.bundle/Contents/Resources/Automation.tracetemplate"
 	set applicationsFolder to "/Users/" & userName & "/Library/Application Support/iPhone Simulator/" & iOSVersion & "/Applications/"
 	
 	
@@ -56,34 +64,14 @@ on run argv
 
 	set errorLog to " "
 	
-	try
-	-- save the actual value of "UIDeviceFamily" field
-	changeInfoPlist(unixPathToApplication, "Copy :UIDeviceFamily :UIDeviceFamily_backup")
-	on error
-	-- ignore any "Entry Already Exists" error. It may happen when this command exits
-	-- without in the middle of the execution. In this case we can just ignore the 
-	-- the value of UIDeviceFamily because the correct value is aler
-	end
-	
-	changeInfoPlist(unixPathToApplication, "Delete :UIDeviceFamily")
 	repeat with currentDevice in allDevices
-		-- make the app support only iPhone or iPad because universal apps don't work 
-		-- well with the Instruments. (Instruments always opens them with iPad simulator)
-		set deviceFamily to "1"
-		if currentDevice contains "iPad"
-		  set deviceFamily to "2"
-		end if
-		changeInfoPlist(unixPathToApplication, "Add :UIDeviceFamily array")
-		changeInfoPlist(unixPathToApplication, "Add :UIDeviceFamily:0 integer " & deviceFamily)
-		
-		changeDevice(currentDevice)
-		
 		repeat with currentLang in allLanguages
 			do shell script "./changeLanguage " & currentLang
 			logEvent("Changed language to " & currentLang)
 			
-			logEvent("Executing " &  automationTemplate & " \"" & unixPathToApplication & "\" -e UIASCRIPT \"" & scriptName & "\" -e UIARESULTSPATH Results")
-			set currentResults to do shell script automationTemplate & " \"" & unixPathToApplication & "\" -e UIASCRIPT \"" & scriptName & "\" -e UIARESULTSPATH Results"
+			set instrumentsCommand to "instruments -w \"" & currentDevice & "\" -t " & automationTemplatePath & " \"" & unixPathToApplication & "\" -e UIASCRIPT \"" & scriptName & "\" -e UIARESULTSPATH Results"
+			logEvent("Executing " & instrumentsCommand)
+			set currentResults to do shell script instrumentsCommand
 			
 			if (currentResults as string) contains "Fail:" then
 				set errorLog to (errorLog & currentResults)
@@ -101,13 +89,8 @@ on run argv
 			
 			tell application "iPhone Simulator" to quit
 		end repeat
-		changeInfoPlist(unixPathToApplication, "Delete :UIDeviceFamily")
 	end repeat
-	
-	-- restore the value of "UIDeviceFamily" field
-	changeInfoPlist(unixPathToApplication, "Copy :UIDeviceFamily_backup :UIDeviceFamily")
-	changeInfoPlist(unixPathToApplication, "Delete :UIDeviceFamily_backup")
-	
+		
 	do shell script "rm -rf ./instrumentscli*"
 
 	if length of errorLog > 10 then
@@ -123,10 +106,6 @@ on logEvent(themessage)
 	set theLine to (do shell script "date  +'%Y-%m-%d %H:%M:%S'" as string) & " " & themessage
 	do shell script "echo '" & theLine & "' >> ~/Library/Logs/AppleScript-events.log"
 end logEvent
-
-on changeInfoPlist(appPath, plistCommand)
-	do shell script "/usr/libexec/PlistBuddy -c '" & plistCommand & "' '" & appPAth & "/Info.plist'"
-end changeInfoPlist
 
 on setupFolders()
 	-- Clear useless instrumentscli files and copy the screenshots to the proper folder
@@ -155,30 +134,3 @@ on setupFolders()
 	    logEvent(errMsg)
 	end try
 end setupFolders
-
-on changeDevice(deviceName)
-	delay (1)
-	logEvent("Start changing device to " & deviceName)
-	
-	tell application "iPhone Simulator" to activate
-	tell application "System Events"
-		tell process "iPhone Simulator"
-			tell menu bar 1
-				tell menu bar item 5
-					-- Hardware menu
-					tell menu 1
-						-- Device
-						tell menu item 1
-							-- Device sub menu
-							tell menu 1
-								click menu item deviceName
-							end tell
-						end tell
-          			end tell
-        		end tell
-      		end tell
-    	end tell
-  	end tell
-	
-	logEvent("Changed device to " & deviceName)
-end changeDevice
