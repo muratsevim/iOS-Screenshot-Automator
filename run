@@ -3,11 +3,11 @@
 on run argv
 	-- Set all devices you want to use for screenshots here 
 	-- (has to match the name of the menu items of the iOS Simulator)
-	set allDevices to {"iPad (Retina)", "iPhone (Retina 3.5-inch)" , "iPhone (Retina 4-inch)"}
+	set allDevices to {"iPhone Retina (3.5-inch)" , "iPhone Retina (4-inch)", "iPad Retina"}
 	-- Set all languages your app is translated to. 
 	set allLanguages to {"zh-Hans", "en", "fr", "de", "it", "ja", "ru", "es", "tr", "uk" }
-	
-	set iOSVersion to "6.1"
+
+	set iOSVersion to "7.1"
 	
 	setupFolders()
 	
@@ -37,7 +37,7 @@ on run argv
 		
 		repeat with currentSubfolder in subFiles
 			-- inside the app
-			if (currentSubFolder as string) contains appName then
+			if (currentSubFolder as string) contains (appName & ".app") then
 				set appFolderName to currentSubFolder
 			end if
 		end repeat
@@ -82,6 +82,7 @@ on run argv
 			do shell script "./changeLanguage " & currentLang
 			logEvent("Changed language to " & currentLang)
 			
+			logEvent("Executing " &  automationTemplate & " \"" & unixPathToApplication & "\" -e UIASCRIPT \"" & scriptName & "\" -e UIARESULTSPATH Results")
 			set currentResults to do shell script automationTemplate & " \"" & unixPathToApplication & "\" -e UIASCRIPT \"" & scriptName & "\" -e UIARESULTSPATH Results"
 			
 			if (currentResults as string) contains "Fail:" then
@@ -89,7 +90,7 @@ on run argv
 			end if
 			
 			
-			logEvent(currentResults)
+			logEvent("Results: " & currentResults)
 			
 			try
 				do shell script "mv Results/Run\\ 1/* Latest/"
@@ -157,7 +158,7 @@ end setupFolders
 
 on changeDevice(deviceName)
 	delay (1)
-	logEvent("Start changing device to " & deviceName)	
+	logEvent("Start changing device to " & deviceName)
 	
 	tell application "iPhone Simulator" to activate
 	tell application "System Events"
